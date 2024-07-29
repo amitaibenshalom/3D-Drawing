@@ -10,48 +10,132 @@ from consts import *
 
 
 def draw_center_lines():
+    """
+    Draw the center lines on the screen
+    """
     global screen
-    pygame.draw.line(screen, black, (screen_width // 2, 0), (screen_width // 2, screen_height))
-    pygame.draw.line(screen, black, (0, screen_height // 2), (screen_width, screen_height // 2))
+    pygame.draw.line(screen, text_color, (screen_width // 2, 0), (screen_width // 2, screen_height))
+    pygame.draw.line(screen, text_color, (0, screen_height // 2), (screen_width, screen_height // 2))
 
 
-def display_start_msg():
-    global screen, msg_font
-    text = msg_font.render("Draw with the mouse. When finished press '3' for 3D or '2' for 2D", True, black)
-    screen.blit(text, [0,0])
+def display_msg(state, dAngle):
+    """
+    Display the message on the screen based on the state
     
-def realSigmoid(x):
-    if x<=-44:
-        return 2
-    elif x < -17:
+    Args:
+    * state: the state of the program (drawing or showing)
+    """
+    global screen, msg_font
+
+    if state == State.DRAWING:
+        upper_text = msg_font.render("Draw with the mouse. When finished press 'ENTER' for rotating 360 deg", True, text_color)
+        lower_text = msg_font.render("You can draw while rotating only with RIGHT/LEFT/UP/DOWN keys (not ENTER)", True, text_color)
+    else:
+        upper_text = msg_font.render("Use RIGHT/LEFT/UP/DOWN/M/N keys to rotate drawing", True, text_color)
+        lower_text = msg_font.render("Press C to change color and R to reset drawing", True, text_color)
+        stats = msg_font.render(f"d-Angle: {dAngle}", True, text_color)
+        screen.blit(stats, [0,32])
+
+    screen.blit(upper_text, [0,0])
+    screen.blit(lower_text, [0,16])
+
+
+def valid_point(point, points):
+    """
+    Check if the point is valid based on the minimum distance from the last point
+
+    Args:
+    * point: the point to check
+    * points: the list of points to check against
+    """
+    return len(points) == 0 or math.dist(points[-1], point) > min_distance
+
+    
+def size_based_on_y_axis(y):
+    """
+    A sigmoid function that returns a value between 2 and 7 based on the input x
+
+    Args:
+    * x: the input value
+    """
+    return min(max(4, round(0.03 * y + 4)), 8)
+
+    if y <= -44:
         return 3
-    elif x < 0:
+    elif y < -17:
         return 4
-    elif x < 17:
+    elif y < 0:
         return 5
-    elif x < 44:
+    elif y < 17:
+        return 5
+    elif y < 44:
         return 6
     return 7
 
+
+def set_dAngle(length):
+    """
+    Set the dAngle value based on the number of points in the drawing
+
+    Args:
+    * length: the number of points in the drawing
+    """
+    return min(round(0.05 * length + 0.5), 10) # dAngle = 0.05 * length + 0.5 (rounding to nearest integer)
+
+
 def draw_points(points, color):
+    """
+    Draw the points on the screen
+    
+    Args:
+    points: list of points to draw
+    color: the color to draw the points with (RGB)
+    """
     global screen
+
     for point in points:
         pygame.draw.rect(screen, color, [point[0], point[2], size(point), size(point)])
 
 
 def rotate3D_Z(vector, angle, center):
+    """
+    Rotate a 3D vector around the Z axis (implementation of the rotation matrix)
+
+    Args:
+    * vector: the vector to rotate
+    * angle: the angle to rotate by (in radians)
+    * center: the center of the rotation
+    """
     pos = [math.cos(angle)*(vector[0]-center[0]) + math.sin(angle)*(vector[1]-center[1]),-math.sin(angle)*(vector[0]-center[0]) + math.cos(angle)*(vector[1]-center[1]), vector[2]]
     pos[0] = pos[0] + center[0]
     pos[1] = pos[1] + center[1]
     return pos
 
+
 def rotate3D_Y(vector, angle, center):
+    """
+    Rotate a 3D vector around the Y axis (implementation of the rotation matrix)
+
+    Args:
+    * vector: the vector to rotate
+    * angle: the angle to rotate by (in radians)
+    * center: the center of the rotation
+    """
     pos = [math.cos(angle)*(vector[0]-center[0]) + math.sin(angle)*(vector[2]-center[2]),vector[1],-math.sin(angle)*(vector[0]-center[0]) + math.cos(angle)*(vector[2]-center[2])]
     pos[0] = pos[0] + center[0]
     pos[2] = pos[2] + center[2]
     return pos
 
+
 def rotate3D_X(vector, angle, center):
+    """
+    Rotate a 3D vector around the X axis (implementation of the rotation matrix)
+
+    Args:
+    * vector: the vector to rotate
+    * angle: the angle to rotate by (in radians)
+    * center: the center of the rotation
+    """
     pos = [vector[0],math.cos(angle)*(vector[1]-center[1]) + math.sin(angle)*(vector[2]-center[2]),-math.sin(angle)*(vector[1]-center[1]) + math.cos(angle)*(vector[2]-center[2])]
     pos[1] = pos[1] + center[1]
     pos[2] = pos[2] + center[2]
@@ -59,13 +143,12 @@ def rotate3D_X(vector, angle, center):
 
 
 def size(vector):
-    return realSigmoid(vector[1])
+    return size_based_on_y_axis(vector[1])
 
 
 def main():
-    global drawing_color
+    global drawing_color, dAngle
     points = []
-    theta = 2
     center = (screen_width // 2, 0, screen_height // 2)
     state = State.DRAWING
 
@@ -94,56 +177,64 @@ def main():
                         continue
                     
                     length = len(points)
-                    for layer_index in range(360 // dTheta):
+
+                    if auto_change_dAngle:
+                        dAngle = set_dAngle(length)
+                        print("length: ", length, "dAngle: ", dAngle)
+
+                    for layer_index in range(360 // dAngle):
+
                         for point_index in range(length):
-                            rotated_point = rotate3D_Z(points[layer_index * length + point_index], math.radians(-dTheta), center)
+                            rotated_point = rotate3D_Z(points[layer_index * length + point_index], math.radians(-dAngle), center)
                             points.append(rotated_point)
                             pygame.draw.rect(screen, drawing_color, [rotated_point[0], rotated_point[2], size(rotated_point), size(rotated_point)])
+                        
                         pygame.display.update()
                         clock.tick(90)
+
                     state = State.SHOW
         
         pressed_keys = pygame.key.get_pressed()
 
         if pressed_keys[pygame.K_LEFT]:
             for point_index in range(0, len(points)):
-                tpoint = rotate3D_Z(points[point_index], math.radians(-theta), center)
+                tpoint = rotate3D_Z(points[point_index], math.radians(-angle), center)
                 points[point_index] = tpoint
 
         if pressed_keys[pygame.K_RIGHT]:
             for point_index in range(0, len(points)):
-                tpoint = rotate3D_Z(points[point_index], math.radians(theta), center)
+                tpoint = rotate3D_Z(points[point_index], math.radians(angle), center)
                 points[point_index] = tpoint
 
         if pressed_keys[pygame.K_UP]:
             for point_index in range(0, len(points)):
-                tpoint = rotate3D_X(points[point_index], math.radians(theta), center)
+                tpoint = rotate3D_X(points[point_index], math.radians(angle), center)
                 points[point_index] = tpoint
 
         if pressed_keys[pygame.K_DOWN]:
             for point_index in range(0, len(points)):
-                tpoint = rotate3D_X(points[point_index], math.radians(-theta), center)
+                tpoint = rotate3D_X(points[point_index], math.radians(-angle), center)
                 points[point_index] = tpoint
 
         if pressed_keys[pygame.K_n]:
             for point_index in range(0, len(points)):
-                tpoint = rotate3D_Y(points[point_index], math.radians(theta), center)
+                tpoint = rotate3D_Y(points[point_index], math.radians(angle), center)
                 points[point_index] = tpoint
 
         if pressed_keys[pygame.K_m]:
             for point_index in range(0, len(points)):
-                tpoint = rotate3D_Y(points[point_index], math.radians(-theta), center)
+                tpoint = rotate3D_Y(points[point_index], math.radians(-angle), center)
                 points[point_index] = tpoint
                 
         if state == State.DRAWING:
             if pygame.mouse.get_pressed()[0]:
                 point = (pygame.mouse.get_pos()[0], 0, pygame.mouse.get_pos()[1])
-                if not point in points:
+                if valid_point(point, points):
                     points.append(point)
 
         screen.fill(background_color)
         draw_center_lines()
-        display_start_msg()
+        display_msg(state, dAngle)
         draw_points(points, drawing_color)
         pygame.display.update()
         # clock.tick(900)
