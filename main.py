@@ -57,14 +57,14 @@ def valid_point(point, points):
     
 def size_based_on_y_axis(y):
     """
-    A sigmoid function that returns a value between 2 and 7 based on the input x
+    Return the size of the point based on the Y axis value)
 
     Args:
-    * x: the input value
+    * y: the input value
     """
-    return min(max(4, round(0.03 * y + 4)), 8)
+    # attempt to create a linear function 
+    # return min(max(4, round(0.03 * y + 4)), 8)
 
-    # mabye use this instead
     if y <= -44:
         return 3
     elif y < -17:
