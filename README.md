@@ -1,6 +1,5 @@
 # 3D-Drawing
-Drawing canvas that you can rotate while drawing or generating a solid of revolution from a 2D drawing of yours.
-
+Drawing canvas that you can rotate while drawing or generating a solid of revolution from a 2D drawing of yours.\
 see https://en.wikipedia.org/wiki/Solid_of_revolution
 
 * draw with the mouse
