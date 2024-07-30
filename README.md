@@ -14,5 +14,4 @@ You can also draw while rotating the drawing, thus creating a 3D drawing in real
 
 
 
-https://github.com/user-attachments/assets/510478ba-6bf6-4496-abb8-cf35842c1931
-
+![3d-drawing-example-test](https://github.com/user-attachments/assets/c3236b5b-0567-4114-9fc1-268d342bade0)
