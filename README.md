@@ -13,5 +13,4 @@ see https://en.wikipedia.org/wiki/Solid_of_revolution
 You can also draw while rotating the drawing, thus creating a 3D drawing in real-time.
 
 
-
-![3d-drawing-example-test](https://github.com/user-attachments/assets/c3236b5b-0567-4114-9fc1-268d342bade0)
+![3d-drawing_example](https://github.com/user-attachments/assets/495cec5b-9352-4453-821b-9db6b520640d)
